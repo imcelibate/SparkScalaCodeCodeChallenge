@@ -1,9 +1,11 @@
 package com.amma.guru.sparkscala
 
 import java.io.File
-
+import java.util
+import scala.collection.mutable.Map
 import org.apache.spark.sql.SparkSession
 import org.apache.spark.sql.Row
+import org.apache.spark.sql.functions._
 
 object SparkRDDOps {
 
@@ -30,10 +32,59 @@ object SparkRDDOps {
     })
     abc.foreach(println)
 
+    /*
+         Process a data set with mulitple
+         and count the occurrence of distinct words
+         in each row
+         If file contains
+          blue black green blue black
+          blue black green blue black
+
+          Out put should be :slight_smile:
+          (blue , 2) ,(black , 2) ,(green,1)
+          (blue , 2) ,(black , 2) ,(green,1)
+              */
+    println("*************\n" +
+      "Process a data set with mulitple\n         " +
+      "and count the occurrence of distinct words \n         " +
+      "in each row" +
+      " "
+      "***")
+
+
+    val strSeq1 = Seq(("black", "white","black","red"),
+      ("AMMA", "KALI","AMMA","GURU"),
+      ("AMMA", "AMMACHI","KALI","GURU"),
+      ("AMMACH", "AMMACHI","KALI","RED"))
+
+    val df1 = spark.sparkContext.parallelize(strSeq1)
+    val op1 = df1.map(x => {
+      // spark.sparkContext.parallelize
+        val s = (Seq(x._1,x._2,x._3,x._4))
+       // var map = new util.Map[String,Int]()
+        var map1:Map[String,Int] =  Map()
+       for(i <- s){
+         if(map1.contains(i)){
+           map1(i) = map1(i)+1
+         }else{
+           map1(i) = 1
+         }
+
+       }
+      map1
+       }
+    )
+
+    op1.foreach(println)
+
+
+
     println("groupByKey Test")
     val data1 = spark.sparkContext.parallelize(Array(('k',5),('s',3),('s',4),('p',7),('p',5),('t',8),('k',6)))
     val group = data1.groupByKey()
     group.foreach(println)
+
+
 
     //reduce action test
     println("reduce Action Test")
@@ -45,33 +96,6 @@ object SparkRDDOps {
     val wordcount2 = wordcount1.reduceByKey(_+_)
     wordcount2.foreach(println)
 
-    /*
-         Process a data set with mulitple
-         and count the occurrence of distinct words
-         in each row
-    */
-    println("*************\n" +
-      "Process a data set with mulitple\n         " +
-      "and count the occurrence of distinct words \n         " +
-      "in each row" +
-      "***")
-
-    val strSeq1 = Seq(("black", "white","black","red"),
-                       ("AMMA", "KALI","AMMA","GURU"),
-                        ("AMMA", "AMMACHI","KALI","GURU"),
-                          ("AMMACH", "AMMACHI","KALI","RED"))
-
-    val df1 = spark.sparkContext.parallelize(strSeq1)
-    val op1 = df1.map(x =>
-                               Row(x._1,x._2,x._3,x._4)
-                          )
-    val op2 = op1.flatMap(x =>
-                              {
-                                x.toSeq.map(y => (y.toString,1))
-                              }
-                               )
-
-    op2.reduceByKey(_+_).foreach(print)
     spark.close()
 
   }
